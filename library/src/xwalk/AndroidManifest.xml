@@ -1,0 +1,8 @@
+<manifest
+    package="com.lachlanm.xwalkfallback"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Required cross-walk permission -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+</manifest>

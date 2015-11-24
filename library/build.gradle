@@ -1,0 +1,87 @@
+apply plugin: 'com.android.library'
+
+def getOptionalProperty(String name, def defaultValue) {
+    if (project.hasProperty(name)) {
+        return rootProject.ext[name]
+    }
+    return defaultValue
+}
+
+repositories {
+    maven {
+        // Required for the cross-walk libraries
+        url 'https://download.01.org/crosswalk/releases/crosswalk/android/maven2'
+    }
+}
+
+// Provides the ability to disable the cross-walk portion of the library, reducing gradle download time.
+final boolean useCrossWalk = getOptionalProperty("crossWalkEnabled", true)
+
+android {
+    compileSdkVersion getOptionalProperty("compileSdkVersion", 23)
+    buildToolsVersion getOptionalProperty("buildToolsVersion", '23.0.1')
+
+    defaultConfig {
+        targetSdkVersion getOptionalProperty("targetSdkVersion", 23)
+    }
+
+    productFlavors {
+        standard {
+            minSdkVersion 10
+        }
+        if (useCrossWalk) {
+            xwalkArm {
+                minSdkVersion 14
+                ndk {
+                    abiFilters "armeabi-v7a", ""
+                }
+            }
+            xwalkX86 {
+                minSdkVersion 14
+                ndk {
+                    abiFilters "x86", ""
+                }
+            }
+        }
+    }
+
+    if (useCrossWalk) {
+        sourceSets {
+            xwalkArm {
+                manifest.srcFile 'src/xwalk/AndroidManifest.xml'
+                java.srcDirs = ['src/xwalk/java']
+            }
+            xwalkX86 {
+                manifest.srcFile 'src/xwalk/AndroidManifest.xml'
+                java.srcDirs = ['src/xwalk/java']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    // Important for enforcing library flavour constraints.
+    publishNonDefault true
+}
+
+final String XWALK_VERSION = getOptionalProperty("xwalkVersion", "15.44.384.13")
+
+if (useCrossWalk) {
+    // TODO remove eventually: http://b.android.com/162285
+    configurations {
+        xwalkArm
+        xwalkX86
+    }
+}
+
+dependencies {
+    if (useCrossWalk) {
+        xwalkArmCompile("org.xwalk:xwalk_core_library:$XWALK_VERSION:arm@aar")
+        xwalkX86Compile "org.xwalk:xwalk_core_library:$XWALK_VERSION:x86@aar"
+    }
+}
